@@ -1,21 +1,40 @@
 import pytest
-from main import ClassUnderTest, ThingToMock
-from pytest_mock import mocker 
-from function import square, main
+from main import BoothInUseLedIndicator
 
-class TestClass(object):
+### todo: is there a better way to mock?
+# from pytest_mock import mocker 
 
-    def test_real(self):
-        sut = ClassUnderTest()
-        assert  sut.doit() == "ThingToMock.doThing() called with stub for now"
+from mock import Mock
 
-    def test_mock(self, monkeypatch):
-        monkeypatch.setattr("main.ThingToMock.doThing", lambda s,p: "mocked") 
-        sut = ClassUnderTest()
-        assert  sut.doit() == "mocked"
+try:
+    import machine
+    isRunningOffChip = False
+except:
+    from machine_stub import machine
+    isRunningOffChip = True
 
-def test_mock(monkeypatch):
-    monkeypatch.setattr("main.ThingToMock.doThing", lambda s,p: "mocked") 
-    sut = ClassUnderTest()
-    assert  sut.doit() == "mocked"
+@pytest.fixture
+def boothInUseLedIndicator(monkeypatch, mockGreenLedPin, mockRedLedPin):
+    monkeypatch.setattr("main.BoothInUseLedIndicator.greenLed", mockGreenLedPin) 
+    monkeypatch.setattr("main.BoothInUseLedIndicator.redLed", mockRedLedPin) 
+    return BoothInUseLedIndicator()
+    
+@pytest.fixture
+def mockGreenLedPin():
+    return Mock(spec=machine.Pin)
 
+@pytest.fixture
+def mockRedLedPin():
+    return Mock(spec=machine.Pin)
+
+class TestPinTransitions(object):
+
+    def test_whenOccupiedThenTurnRedOnAndTurnGreenOff(self, monkeypatch, boothInUseLedIndicator, mockGreenLedPin, mockRedLedPin):
+        boothInUseLedIndicator.setOccupied()
+        mockGreenLedPin.off.assert_called()
+        mockRedLedPin.on.assert_called()
+
+    def test_whenAvailableThenTurnRedOffAndTurnGreenOn(self, monkeypatch, boothInUseLedIndicator, mockGreenLedPin, mockRedLedPin):
+        boothInUseLedIndicator.setAvailable()
+        mockGreenLedPin.on.assert_called()
+        mockRedLedPin.off.assert_called()

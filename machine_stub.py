@@ -6,3 +6,9 @@ class machine:
 
         def __init__(self, pin, dir):
             pass
+
+        def on(self):
+            pass
+
+        def off(self):
+            pass
